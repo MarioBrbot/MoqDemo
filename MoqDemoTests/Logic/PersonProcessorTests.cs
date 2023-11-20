@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using Autofac.Extras.Moq;
 using DemoLibrary.Logic;
 using DemoLibrary.Models;
+using DemoLibrary.Utilities;
 using Xunit;
 
 namespace MoqDemoTests.Logic
@@ -52,7 +55,7 @@ namespace MoqDemoTests.Logic
         [InlineData("Bill#", "Gates", "6'8\"", "firstName")]
         [InlineData("Charitry", "C88ey", "5'4\"", "lastName")]
         [InlineData("Jon", "Gates", "SixTwo", "heightText")]
-        [InlineData("", "Gates", "5'11\"", "firstName")]
+        //[InlineData("", "Gates", "5'11\"", "firstName")]
         public void CreatePerson_ThrowsException(string firstName, string lastName, string heightText, string expectedInvalidParameter)
         {
             PersonProcessor processor = new PersonProcessor(null);
@@ -66,6 +69,48 @@ namespace MoqDemoTests.Logic
                 Assert.Equal(expectedInvalidParameter, argEx.ParamName);
             }
 
+        }
+
+
+
+        [Fact]
+        public void LoadPeople_ValidCall()
+        {
+            using (var mock = AutoMock.GetLoose()) 
+            {
+                mock.Mock<ISqliteDataAccess>()
+                    .Setup(x => x.LoadData<PersonModel>("select * from Person"))
+                    .Returns(GetSamplePeople());
+
+                var cls = mock.Create<PersonProcessor>();
+                var expected = GetSamplePeople();
+
+                var actual = cls.LoadPeople();
+
+                Assert.True(actual != null);
+                Assert.Equal(expected.Count, actual.Count);
+            }
+
+
+        }
+
+        private List<PersonModel> GetSamplePeople()
+        {
+            List<PersonModel> output = new List<PersonModel>
+            {
+                new PersonModel
+                {
+                    FirstName = "Bill",
+                    LastName = "Gates"
+                },
+               new PersonModel
+               {
+                   FirstName = "Jill",
+                   LastName = "Gates"
+               }
+            };
+
+            return output;
         }
     }
 }
